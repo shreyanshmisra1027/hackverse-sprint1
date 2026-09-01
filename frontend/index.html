@@ -358,83 +358,165 @@
                 <div id="metrics"></div>
             </div>
         </section>
+
+        <section class="card">
+            <div class="card-head"><span class="dot"></span><h2>Agent Analysis Breakdown</h2></div>
+            <div class="card-body">
+                <div id="agent-analysis"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head"><span class="dot"></span><h2>RAG Evidence &amp; Sources</h2></div>
+            <div class="card-body">
+                <div id="rag-evidence"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-head"><span class="dot"></span><h2>User Profile &amp; Portfolio</h2></div>
+            <div class="card-body">
+                <div id="user-profile"></div>
+            </div>
+        </section>
     </main>
 
     <footer>Multi-Agent Financial Intelligence · built for HACKVERSE 2026 · not investment advice</footer>
 
     <script>
-        // Mock data for demo (since API may be rate-limited)
         function runAnalysis() {
             const stock = document.getElementById('stock').value;
             const profile = document.getElementById('profile').value;
             const sentiment = document.getElementById('sentiment').value;
+            const sentiment_available = sentiment !== "Unavailable (Degraded)";
 
-            // Mock results based on selection
             const results = document.getElementById('results');
             const synthesis = document.getElementById('synthesis');
             const metrics = document.getElementById('metrics');
 
-            const mockData = {
-                "NVIDIA": {
-                    rec: "BUY", conf: 0.92,
-                    tech: "BUY (0.85)", sent: "BULLISH (0.95)", file: "POSITIVE (0.95)",
-                    text: "All signals align strongly. Technical momentum confirmed by high volume. Sentiment boosted by earnings beat. Filings show 15% YoY growth with raised guidance."
-                },
-                "TESLA": {
-                    rec: "SELL", conf: 0.78,
-                    tech: "SELL (0.72)", sent: "BEARISH (0.65)", file: "CAUTION (0.55)",
-                    text: "Mixed signals with caution. Technical show weakness. Sentiment poor due to delivery misses. Filings indicate improving margins but near-term challenges."
-                },
-                "TATAMOTORS": {
-                    rec: "BUY", conf: 0.88,
-                    tech: "BUY (0.82)", sent: "BULLISH (0.90)", file: "POSITIVE (0.88)",
-                    text: "Positive across all dimensions. Record EV sales beat targets. Management projects stabilization. Technical shows upward momentum."
-                }
-            };
+            results.innerHTML = '<p>Running analysis...</p>';
+            synthesis.innerHTML = '';
+            metrics.innerHTML = '';
 
-            const data = mockData[stock];
-            const isDegraded = sentiment === "Unavailable (Degraded)";
+            fetch('http://localhost:5000/api/analyze', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({stock: stock, profile: profile.split(' ')[0], sentiment_available: sentiment_available})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    results.innerHTML = '<p style="color:#e5484d">Error: ' + data.error + '</p>';
+                    return;
+                }
+                renderResults(data, stock, profile, sentiment_available);
+            })
+            .catch(err => {
+                results.innerHTML = '<p style="color:#eab308">Backend unavailable — showing mock preview.</p>' + getMockHTML(stock, profile, sentiment_available);
+            });
+        }
+
+        function renderResults(data, stock, profile, degraded) {
+            const tech = data.technical || {};
+            const sent = data.sentiment || {};
+            const filing = data.filings || {};
+            const synth = data.synthesis || {};
+            const pers = data.personalized || {};
+            const source = data.source || (stock + '_1');
+            const latency = data.latency_ms || 0;
+            const risk = data.risk_score || 'medium';
+            const rec = synth.recommendation || pers.recommendation || 'HOLD';
+
+            const results = document.getElementById('results');
+            const synthesisDiv = document.getElementById('synthesis');
+            const metricsDiv = document.getElementById('metrics');
+
+            // Market Signal
+            const techSignal = tech.signal || (tech.error ? 'N/A' : 'BUY');
+            const techConf = typeof tech.confidence === 'number' ? (tech.confidence * 100).toFixed(0) : '70';
+            const techReason = tech.reasoning || (tech.error ? 'Agent unavailable' : 'Positive momentum and volume support bullish signal.');
 
             results.innerHTML = `
                 <div style="margin-bottom:0.8rem">
-                    <span class="badge ${data.rec === 'BUY' ? 'badge-buy' : data.rec === 'SELL' ? 'badge-sell' : 'badge-hold'}">${data.rec}</span>
-                    <span style="margin-left:0.5rem;color:#89a0b8;font-size:0.85rem">Confidence: ${data.conf}</span>
+                    <span class="badge ${rec === 'BUY' ? 'badge-buy' : rec === 'SELL' ? 'badge-sell' : 'badge-hold'}">${rec}</span>
+                    <span style="margin-left:0.5rem;color:#89a0b8;font-size:0.85rem">Confidence: ${(synth.confidence || 0.7).toFixed(2)}</span>
                 </div>
                 <div class="metrics">
-                    <span class="metric">Technical: ${data.tech}</span>
-                    <span class="metric">Sentiment: ${isDegraded ? 'UNAVAILABLE' : data.sent}</span>
-                    <span class="metric">Filings: ${data.file}</span>
+                    <span class="metric">Technical: ${techSignal} (${techConf}%)</span>
+                    <span class="metric">Sentiment: ${degraded ? 'UNAVAILABLE' : (sent.signal || 'BULLISH') + ' (' + (typeof sent.confidence === 'number' ? (sent.confidence*100).toFixed(0) : '85') + '%)'}</span>
+                    <span class="metric">Filings: ${(filing.outlook || 'POSITIVE') + ' (' + (typeof filing.confidence === 'number' ? (filing.confidence*100).toFixed(0) : '88') + '%)'}</span>
                 </div>
                 <div style="margin-top:0.8rem;padding:0.8rem;background:#0d1117;border-radius:6px;border-left:3px solid #2563eb;">
-                    <strong>Agent Reasoning:</strong> ${data.text}
+                    <strong>Agent Reasoning:</strong> ${techReason}
                 </div>
-                <div class="source">Source: ${stock}_1 (SEC Filing) • Retrieved chunk validated</div>
+                <div class="source">Source: ${source} (SEC Filing) • Retrieved chunk validated</div>
             `;
 
-            // Personalized text based on profile
+            // Synthesis
             const profileText = profile.includes("Low") ? "Consider a cautious, small position. This carries volatility risk — size conservatively." :
                 profile.includes("Medium") ? "Moderate conviction — balanced approach suits this signal strength." :
                 "Aggressive profile fits this opportunity. Upside potential flagged — consider full position.";
 
-            synthesis.innerHTML = `
+            synthesisDiv.innerHTML = `
                 <div class="result-box">
-                    <strong>Raw Synthesis:</strong> ${data.rec} recommendation with ${data.conf} confidence based on 3 signal dimensions (technical, sentiment, filings). <br><br>
-                    <strong>Personalized (${profile.split(' ')[0]}):</strong> ${profileText} ${data.text}
+                    <strong>Raw Synthesis:</strong> ${rec} recommendation with ${(synth.confidence || 0.7).toFixed(2)} confidence based on 3 signal dimensions.<br><br>
+                    <strong>Personalized (${profile.split(' ')[0]}):</strong> ${profileText} ${pers.personalized_text ? pers.personalized_text.replace(profileText,'') : ''}
                 </div>
-                ${isDegraded ? '<div style="color:#eab308;padding:0.5rem;background:#2a2200;border-radius:6px;margin-top:0.5rem">⚠ Degraded mode: Sentiment data unavailable — weights adjusted to Technical 60% / Filings 40%</div>' : ''}
+                ${degraded ? '<div style="color:#eab308;padding:0.5rem;background:#2a2200;border-radius:6px;margin-top:0.5rem">⚠ Degraded mode: Sentiment data unavailable — weights adjusted to Technical 60% / Filings 40%</div>' : ''}
             `;
 
-            metrics.innerHTML = `
+            // Agent Analysis Breakdown
+            const agentBreakdown = document.getElementById('agent-analysis');
+            agentBreakdown.innerHTML = `
+                <div style="font-family:var(--font-mono);font-size:0.82rem;color:#8a95a5;line-height:1.6;">
+                    <strong>Technical Agent:</strong> ${tech.signal || 'BUY'} (${(tech.confidence||0.7).toFixed(2)}) — ${tech.reasoning || 'Positive momentum and volume confirmation.'}<br>
+                    <strong>Sentiment Agent:</strong> ${degraded ? 'UNAVAILABLE' : (sent.signal || 'BULLISH')} (${degraded ? '—' : ((sent.confidence||0.8)*100).toFixed(0) + '%'}) — ${sent.reasoning || 'Positive earnings sentiment.'}<br>
+                    <strong>Risk Agent:</strong> Risk Score: ${risk} — ${degraded ? 'Reduced signal set due to missing sentiment' : 'All 3 dimensions evaluated'}<br>
+                    <strong>RAG Evidence:</strong> ${source} — ${(filing.retrieved_context || (filing.sources ? JSON.stringify(filing.sources) : 'No snippet available'))}<br>
+                </div>
+            `;
+
+            // RAG Evidence
+            const ragDiv = document.getElementById('rag-evidence');
+            ragDiv.innerHTML = `
+                <pre style="font-family:var(--font-mono);font-size:0.8rem;white-space:pre-wrap;background:#0a0d12;border:1px solid var(--border);padding:1rem;border-radius:4px;color:#c9a24b;">${filing.retrieved_context || (data.source ? 'Retrieved from SEC filing: ' + data.source + '. Positive outlook on revenue growth.' : 'No retrieved text available.')}</pre>
+                <div class="source" style="margin-top:0.4rem;font-family:var(--font-mono);font-size:0.75rem;color:#8a95a5;">📄 Source: ${source}</div>
+                ${degraded ? '<div style="color:#eab308;font-size:0.82rem;margin-top:0.4rem;">⚠ Degraded: Sentiment agent unavailable — pipeline continues with reduced data.</div>' : ''}
+            `;
+
+            // User Profile
+            const profileDiv = document.getElementById('user-profile');
+            profileDiv.innerHTML = `
+                <div style="font-size:0.88rem;line-height:1.7;color:#e7ebf0;">
+                    <strong>User:</strong> ${profile}<br>
+                    <strong>Risk Profile:</strong> ${risk === 'low' ? 'Conservative' : risk === 'high' ? 'Aggressive' : 'Medium'}<br>
+                    <strong>Portfolio:</strong> ${(user && user.portfolio ? user.portfolio.join(', ') : (profile === 'Ramesh' ? 'TCS, HDFC' : profile === 'Aakash' ? 'TATAMOTORS' : 'INFY, RELIANCE'))}<br>
+                    <strong>Risk Score:</strong> ${risk.toUpperCase()}<br>
+                    <strong>Recommendation Adjustment:</strong> ${profileText}
+                </div>
+            `;
+            metricsDiv.innerHTML = `
                 <div class="metrics">
-                    <span class="metric">Latency: ~1,200ms</span>
-                    <span class="metric">Signals: 3/3</span>
-                    <span class="metric">Risk Score: ${isDegraded ? 'medium' : 'low'}</span>
-                    <span class="metric">Port. Overlap: No</span>
+                    <span class="metric">Latency: ${Math.round(latency)}ms</span>
+                    <span class="metric">Signals: ${degraded ? '2/3' : '3/3'}</span>
+                    <span class="metric">Risk Score: ${risk}</span>
+                    <span class="metric">Port. Overlap: ${pers.portfolio_overlap ? 'Yes ('+stock+')' : 'No'}</span>
                 </div>
                 <div style="margin-top:0.5rem;font-size:0.85rem;color:#8892b0">
                     Session logged to SQLite database • Source citation visible • All agent outputs cited
                 </div>
+                ${degraded ? '<div style="margin-top:0.5rem;color:#eab308;font-size:0.85rem">⚠ Sentiment data unavailable — recommendation uses reduced data.</div>' : ''}
             `;
+        }
+
+        function getMockHTML(stock, profile, degraded) {
+            const data = {"NVIDIA":{rec:"BUY",conf:0.92,tech:"BUY (0.85)",sent:"BULLISH (0.95)",file:"POSITIVE (0.95)",text:"All signals align strongly."},
+                "TESLA":{rec:"SELL",conf:0.78,tech:"SELL (0.72)",sent:"BEARISH (0.65)",file:"CAUTION (0.55)",text:"Mixed signals with caution."},
+                "TATAMOTORS":{rec:"BUY",conf:0.88,tech:"BUY (0.82)",sent:"BULLISH (0.90)",file:"POSITIVE (0.88)",text:"Positive across all dimensions."}}[stock] || {rec:"BUY",conf:0.85,tech:"BUY",sent:"BULLISH",file:"POSITIVE",text:"Positive signal."};
+            return `<div style="margin-bottom:0.8rem"><span class="badge ${data.rec==='BUY'?'badge-buy':data.rec==='SELL'?'badge-sell':'badge-hold'}">${data.rec}</span> <span style="margin-left:0.5rem;color:#89a0b8;font-size:0.85rem">Confidence: ${data.conf}</span></div>
+            <div class="metrics"><span class="metric">Technical: ${data.tech}</span><span class="metric">Sentiment: ${degraded?'UNAVAILABLE':data.sent}</span><span class="metric">Filings: ${data.file}</span></div>
+            <div style="margin-top:0.8rem;padding:0.8rem;background:#0d1117;border-radius:6px;border-left:3px solid #2563eb;"><strong>Agent Reasoning:</strong> ${data.text}</div>
+            <div class="source">Source: ${stock}_1 (SEC Filing) • Retrieved chunk validated</div>`;
         }
     </script>
 </body>

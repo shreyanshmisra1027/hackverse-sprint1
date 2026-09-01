@@ -115,3 +115,42 @@ This project was created for HackVerse 2026.
 ## 👨‍💻 Authors
 
 HackVerse 2026 - Team
+
+---
+
+## 🏗️ Architecture
+
+```text
+User (Profile: Conservative / Medium / Aggressive)
+ ↓
+Market Data (price, change%, volume) + News + SEC Filing Retrieval (keyword search)
+ ↓
+3 Specialized Agents (run in parallel):
+  • Technical Agent — price momentum, volume, signal + confidence + reasoning
+  • Sentiment Agent — news sentiment, signal + confidence + reasoning
+  • Risk/Filings Agent — RAG retrieval from snippets.txt, outlook + source + reasoning
+ ↓
+Synthesis Agent — combines 3 agent outputs into recommendation + confidence + explanation
+ ↓
+Personalization (personalize.py) — adjusts recommendation by risk profile
+ ↓
+Frontend (HTML/JS) — displays signal, agent reasoning, RAG source, recommendation, profile, metrics
+```
+
+### What each agent does
+- **Technical Agent**: Reads stock price/volume and returns BUY/SELL/HOLD with confidence and reasoning.
+- **Sentiment Agent**: Reads news text and returns bullish/bearish/neutral with confidence and reasoning.
+- **Filings (RAG) Agent**: Searches `Data/snippets.txt` by keyword, returns the best text chunk with filename (`NVIDIA_1`, etc.) and a positive/negative/neutral outlook.
+- **Synthesis Agent**: Combines the three outputs into a single recommendation with explanation.
+
+### RAG
+Simple keyword retrieval against `Data/snippets.txt`. No vector DB required. Source filename always reaches the UI.
+
+### User profiling
+Profiles (`users.py`): Ramesh (low), Priya (medium), Aakash (high). Same stock + same data → different recommendation text based on `risk_tolerance`.
+
+### Graceful degradation
+If sentiment is unavailable (`sentiment_available=False`), the pipeline skips the sentiment agent, continues with technical + filings, and shows a visible warning (`⚠ Degraded mode`).
+
+### Performance logging
+`personalize/logger.py` writes to SQLite (`DB_PATH`). Each run stores latency, confidence, risk score, degraded flag, signals used. `frontend/server.py` also keeps an in-memory history (`PERFORMANCE_LOG`) shown in the UI.
