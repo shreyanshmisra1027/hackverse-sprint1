@@ -11,7 +11,10 @@ news = {
 }
 
 def search(query: str):
-    with open("snippets.txt", "r") as f:
+    import os
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    snippets_path = os.path.join(script_dir, "snippets.txt")
+    with open(snippets_path, "r") as f:
         content = f.read()
 
     blocks = content.strip().split("\n\n")
