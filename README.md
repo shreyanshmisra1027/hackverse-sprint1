@@ -290,6 +290,9 @@ This is a collaborative HackVerse 2026 project.
 
 Created for HackVerse 2026.
 
-## 👨‍� Authors
-
+## Authors
+1. Sanchit Kalra - Team Lead
+2. Ashwin Joseph - Backend + Data
+3. Shreyansh Misra - Backend + AI/Agents
+4. Vansh - Frontend 
 HackVerse 2026 — Team
