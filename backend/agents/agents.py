@@ -2,6 +2,8 @@ import json
 import os
 import sys
 import time
+from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -92,35 +94,44 @@ def _call_gemini(prompt_text, retries=3, delay=2):
 
 def technical_agent(stock_data):
     prompt = f"""Analyze stock data: {stock_data}.
-Return strict JSON with this structure: {{"signal": "...", "confidence": 0.0, "reasoning": "..."}}
+Return strict JSON with this structure: {{"signal": "BUY/SELL/HOLD", "signal_type": "technical_momentum", "confidence": 0.0, "reasoning": "...", "sources": [{{"type": "market_data", "value": "..."}}]}}
 Return ONLY the JSON object. No markdown formatting, no code fences, no explanation text before or after."""
     try:
         result = _call_gemini(prompt)
-        return json.loads(result)
+        parsed = json.loads(result)
+        parsed['timestamp'] = datetime.now(timezone.utc).isoformat()
+        return parsed
     except Exception:
-        return {'error': 'parse_failed'}
+        return {'error': 'parse_failed', 'timestamp': datetime.now(timezone.utc).isoformat()}
 
 def sentiment_agent(news_text):
     prompt = f"""Analyze news sentiment: {news_text}.
-Return strict JSON with this structure: {{"signal": "...", "confidence": 0.0, "reasoning": "..."}}
+Return strict JSON with this structure: {{"signal": "bullish/bearish/neutral", "signal_type": "sentiment_news", "confidence": 0.0, "reasoning": "...", "sources": [{{"type": "news", "value": "..."}}]}}
 Return ONLY the JSON object. No markdown formatting, no code fences, no explanation text before or after."""
     try:
         result = _call_gemini(prompt)
-        return json.loads(result)
+        parsed = json.loads(result)
+        parsed['timestamp'] = datetime.now(timezone.utc).isoformat()
+        return parsed
     except Exception:
-        return {'error': 'parse_failed'}
+        return {'error': 'parse_failed', 'timestamp': datetime.now(timezone.utc).isoformat()}
 
 def filings_agent(query, chunk, source):
     prompt = f"""Query: {query}
 Chunk: {chunk}
 Source: {source}
-Return strict JSON with this structure: {{"outlook": "...", "confidence": 0.0, "reasoning": "...", "source": "..."}}
+Return strict JSON with this structure: {{"outlook": "positive/negative/neutral", "signal_type": "filings_outlook", "confidence": 0.0, "reasoning": "...", "source": "{source}", "retrieved_context": "{chunk[:100]}...", "sources": [{{"type": "sec_filing", "value": "{source}"}}]}}
 Return ONLY the JSON object. No markdown formatting, no code fences, no explanation text before or after."""
     try:
         result = _call_gemini(prompt)
-        return json.loads(result)
+        parsed = json.loads(result)
+        parsed['timestamp'] = datetime.now(timezone.utc).isoformat()
+        # Ensure retrieved context is included
+        if 'retrieved_context' not in parsed:
+            parsed['retrieved_context'] = chunk[:200]
+        return parsed
     except Exception:
-        return {'error': 'parse_failed'}
+        return {'error': 'parse_failed', 'timestamp': datetime.now(timezone.utc).isoformat()}
 
 def synthesis_agent(technical, sentiment, filings, sentiment_available):
     prompt = f"""Synthesize technical={technical}, sentiment={sentiment}, filings={filings}, sentiment_available={sentiment_available}.

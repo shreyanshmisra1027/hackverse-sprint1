@@ -1,49 +1,64 @@
-# Backend Documentation
+# Backend - Multi-Agent Financial Intelligence System
 
-Complete guide for the stock analysis backend with AI agents and multi-key management.
-
----
-
-## Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Architecture](#architecture)
-3. [Multi-Key System](#multi-key-system)
-4. [Data Integration](#data-integration)
-5. [API Reference](#api-reference)
-6. [Testing](#testing)
-
----
+HACKVERSE 2026 - PS-01: Autonomous Financial Intelligence for Retail Investors
 
 ## Quick Start
 
-### Setup
-
 ```bash
 cd backend
-
-# Create virtual environment
-python3 -m venv venv
 source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure API keys
-cp .env.example .env
-# Edit .env and add your API keys
+python demo.py
 ```
 
-### Basic Usage
+**That's it!** The demo shows all 3 required scenarios:
+1. Full multi-agent analysis with personalization
+2. Degraded mode (sentiment unavailable)
+3. Different user risk profiles
+
+## For Frontend Integration
 
 ```python
-from integration import analyze_stock
+from pipeline import run_pipeline
 
-# Analyze a single stock
-result = analyze_stock("NVIDIA")
-print(result['synthesis']['recommendation'])  # BUY/SELL/HOLD
-print(result['synthesis']['confidence'])       # 0.0-1.0
+# Run full analysis pipeline
+result = run_pipeline(
+    stock="NVIDIA",           # Stock ticker
+    profile_name="Priya",     # User name (Ramesh/Priya/Aakash)
+    sentiment_available=True  # Enable/disable sentiment agent
+)
+
+# Returns complete dict with:
+# - technical, sentiment, filings, synthesis (agent outputs)
+# - personalized (user-specific recommendation)
+# - latency_ms, risk_score, degraded_mode
+# - source (filing citation)
 ```
+
+## Architecture
+
+**4 AI Agents** (parallel execution):
+- Technical Agent - Price momentum, volume analysis
+- Sentiment Agent - News sentiment analysis
+- Filings Agent - SEC filing analysis (RAG)
+- Synthesis Agent - Combines all signals
+
+**User Personalization**: Modifies recommendations based on risk tolerance (low/medium/high)
+
+**Performance Logging**: Tracks latency, confidence, risk scores per session
+
+**Graceful Degradation**: System works even when data sources unavailable
+
+## Available Stocks
+
+- NVIDIA
+- TESLA
+- TATAMOTORS
+
+## User Profiles
+
+- **Ramesh** - Low risk tolerance (cautious recommendations)
+- **Priya** - Medium risk tolerance (balanced approach)
+- **Aakash** - High risk tolerance (aggressive positioning)
 
 ---
 
