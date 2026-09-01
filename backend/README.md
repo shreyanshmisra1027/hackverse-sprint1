@@ -1,8 +1,8 @@
 # Backend - Multi-Agent Financial Intelligence System
 
-HACKVERSE 2026 - PS-01: Autonomous Financial Intelligence for Retail Investors
+> HACKVERSE 2026 - PS-01: Autonomous Financial Intelligence for Retail Investors
 
-## Quick Start
+## ⚡ Quick Start
 
 ```bash
 cd backend
@@ -10,12 +10,12 @@ source venv/bin/activate
 python demo.py
 ```
 
-**That's it!** The demo shows all 3 required scenarios:
+**That's it!** The demo showcases all 3 required scenarios:
 1. Full multi-agent analysis with personalization
 2. Degraded mode (sentiment unavailable)
 3. Different user risk profiles
 
-## For Frontend Integration
+## 🔌 Frontend Integration
 
 ```python
 from pipeline import run_pipeline
@@ -34,13 +34,15 @@ result = run_pipeline(
 # - source (filing citation)
 ```
 
-## Architecture
+## 🏗️ Architecture
 
 **4 AI Agents** (parallel execution):
-- Technical Agent - Price momentum, volume analysis
-- Sentiment Agent - News sentiment analysis
-- Filings Agent - SEC filing analysis (RAG)
-- Synthesis Agent - Combines all signals
+| Agent | Purpose |
+|-------|---------|
+| Technical Agent | Price momentum, volume analysis |
+| Sentiment Agent | News sentiment analysis |
+| Filings Agent | SEC filing analysis (RAG) |
+| Synthesis Agent | Combines all signals |
 
 **User Personalization**: Modifies recommendations based on risk tolerance (low/medium/high)
 
@@ -48,34 +50,7 @@ result = run_pipeline(
 
 **Graceful Degradation**: System works even when data sources unavailable
 
-## Available Stocks
-
-- NVIDIA
-- TESLA
-- TATAMOTORS
-
-## User Profiles
-
-- **Ramesh** - Low risk tolerance (cautious recommendations)
-- **Priya** - Medium risk tolerance (balanced approach)
-- **Aakash** - High risk tolerance (aggressive positioning)
-
----
-
-## Architecture
-
-### Data Flow
-
-```
-Data Sources          Integration          AI Agents           Output
-─────────────        ─────────────        ─────────────       ──────────
-stock_data    →      format()      →      technical_agent     signal
-news          →      prepare()     →      sentiment_agent  →  confidence
-snippets.txt  →      search()      →      filings_agent       reasoning
-                                   →      synthesis_agent     recommendation
-```
-
-### File Structure
+## 📂 File Structure
 
 ```
 backend/
@@ -93,73 +68,45 @@ backend/
 │   ├── test.json              # Expected output format
 │   └── check_api.py           # API key validator
 ├── integration.py             # Main integration layer
+├── pipeline.py               # Pipeline orchestrator
+├── demo.py                   # Demo script
 ├── requirements.txt           # Python dependencies
 ├── .env                       # API keys (gitignored)
 └── README.md                  # This file
 ```
 
----
-
-## Multi-Key System
+## 🔑 Multi-Key System
 
 ### Why Multiple Keys?
 
-**Single Key Limits:**
-- Free tier: 20 requests/day
-- System stops when exhausted
-- 24-hour wait for reset
+| Setup | Daily Requests | Analysis Capacity |
+|-------|---------------|-------------------|
+| Single key | 20 | ~5 stocks |
+| 4 keys | 80 | ~20 stocks |
+| 10 keys | 200 | ~50 stocks |
 
-**Multiple Keys Benefits:**
-- 4 keys = 80 requests/day (4 × 20)
-- Auto-switches on rate limits
-- Continuous availability
-- Keys auto-recover after cooldown
+### Setup
 
-### Setup Multiple Keys
-
-Edit `.env`:
 ```bash
-# Primary key
-GOOGLE_API_KEY=AIzaSyC...abc123
-
-# Additional keys (auto-rotation)
-GOOGLE_API_KEY_1=AIzaSyC...def456
-GOOGLE_API_KEY_2=AIzaSyC...ghi789
-GOOGLE_API_KEY_3=AIzaSyC...jkl012
+# .env
+GOOGLE_API_KEY=your_primary_key
+GOOGLE_API_KEY_1=your_second_key
+GOOGLE_API_KEY_2=your_third_key
+GOOGLE_API_KEY_3=your_fourth_key
 ```
 
 ### How It Works
 
 1. System starts with primary key
-2. On rate limit (429 error), marks key as exhausted
-3. Automatically switches to next available key
-4. Tracks recovery time for each key
-5. Keys become available again after cooldown
+2. On rate limit (429), marks key as exhausted
+3. Auto-switches to next available key
+4. Keys recover after cooldown period
 
-### Monitoring
-
-Watch console for rotation messages:
-```
-✓ Initialized with 4 API key(s)
-✗ API key 'primary' exhausted (retry after 3600s)
-→ Switched to API key 'key_1'
-✓ API key 'primary' quota recovered
-```
-
-### Getting More Keys
-
-1. Create multiple Google accounts
-2. Visit https://ai.google.dev/ with each
-3. Generate API key for each account
-4. Add all keys to `.env`
-
----
-
-## Data Integration
+## 📊 Data Integration
 
 ### Available Data Sources
 
-**Stock Data** (`Data/data.py`)
+**Stock Data** (`Data/data.py`):
 ```python
 stock_data = {
     "NVIDIA": {"price": 118.50, "change_pct": 3.2, "volume": "very high"},
@@ -168,7 +115,7 @@ stock_data = {
 }
 ```
 
-**News** (`Data/data.py`)
+**News** (`Data/data.py`):
 ```python
 news = {
     "NVIDIA": "NVIDIA beats earnings estimates on strong AI chip demand",
@@ -177,79 +124,39 @@ news = {
 }
 ```
 
-**SEC Filings** (`Data/snippets.txt`)
+**SEC Filings** (`Data/snippets.txt`):
 - Searchable text chunks from SEC filings
 - Simple keyword matching via `search(query)` function
 
-### Adding New Data
+### Adding New Stocks
 
-**Add a Stock:**
 Edit `Data/data.py`:
 ```python
 stock_data["NEWSYMBOL"] = {"price": 100.0, "change_pct": 2.5, "volume": "high"}
 news["NEWSYMBOL"] = "Company announces major product launch"
 ```
 
-**Add Filing Snippets:**
 Edit `Data/snippets.txt`:
 ```
 NEWSYMBOL_1
 Company Q2 revenue grew 20% YoY with strong guidance.
-
-NEWSYMBOL_2
-Management highlighted improving margins and cost efficiency.
 ```
 
----
-
-## API Reference
+## 📡 API Reference
 
 ### analyze_stock()
-
-Analyze a single stock with all agents.
 
 ```python
 from integration import analyze_stock
 
 result = analyze_stock(
     ticker="NVIDIA",
-    filing_query="What is the revenue outlook?",  # Optional
-    sentiment_available=True                      # Optional
+    filing_query="What is the revenue outlook?",
+    sentiment_available=True
 )
 ```
 
-**Returns:**
-```json
-{
-  "ticker": "NVIDIA",
-  "query": "What is NVIDIA's financial outlook?",
-  "technical": {
-    "signal": "BUY",
-    "confidence": 0.85,
-    "reasoning": "..."
-  },
-  "sentiment": {
-    "signal": "bullish",
-    "confidence": 0.95,
-    "reasoning": "..."
-  },
-  "filings": {
-    "outlook": "...",
-    "confidence": 0.95,
-    "reasoning": "...",
-    "source": "NVIDIA_1"
-  },
-  "synthesis": {
-    "recommendation": "BUY",
-    "confidence": 0.92,
-    "explanation": "..."
-  }
-}
-```
-
 ### analyze_multiple_stocks()
-
-Analyze multiple stocks with automatic delays.
 
 ```python
 from integration import analyze_multiple_stocks
@@ -257,129 +164,72 @@ from integration import analyze_multiple_stocks
 results = analyze_multiple_stocks(
     tickers=["NVIDIA", "TESLA", "TATAMOTORS"],
     sentiment_available=True,
-    delay_between_stocks=3.0  # Seconds between stocks
+    delay_between_stocks=3.0
 )
-
-for ticker, analysis in results.items():
-    print(f"{ticker}: {analysis['synthesis']['recommendation']}")
 ```
 
-### run_all_agents()
-
-Low-level function to run all agents with custom data.
+### run_pipeline()
 
 ```python
-from agents.agents import run_all_agents
+from pipeline import run_pipeline
 
-result = run_all_agents(
-    stock_data="AAPL: price=$175, RSI=58, MACD=bullish",
-    news_text="Apple announces strong Q3 earnings",
-    filing_query="What is the revenue outlook?",
-    chunk="Q3 revenue grew 12% YoY to $95B",
-    source="10-K Q3 2026",
+result = run_pipeline(
+    stock="NVIDIA",
+    profile_name="Priya",
     sentiment_available=True
 )
 ```
 
----
+## 🧪 Testing
 
-## Testing
-
-### Test Key Manager
 ```bash
+# Validate API keys
 python utils/key_manager.py
-```
-Shows number of keys and current status.
 
-### Test Simple Integration
-```bash
+# Simple integration test
 python tests/test_integration_simple.py
-```
-Tests data retrieval and agent pipeline for NVIDIA.
 
-### Test Full Integration
-```bash
-python integration.py
-```
-Runs analysis on all 3 stocks (NVIDIA, TESLA, TATAMOTORS).
+# Full demo
+python demo.py
 
-### Test Individual Agents
-```bash
+# Run all agents smoke test
 python agents/agents.py
 ```
-Runs smoke test with dummy data.
 
----
+## ⚠️ Rate Limits
 
-## Rate Limits & Quotas
+| Tier | Requests/Day | Reset |
+|------|-------------|-------|
+| Free (per key) | 20 | 24 hours |
 
-**Free Tier (per key):**
-- Model: gemini-3.6-flash
-- Limit: 20 requests/day
-- Reset: Daily (24 hours)
+Each stock analysis uses 4 API calls.
 
-**With Multiple Keys:**
-- 2 keys = 40 requests/day
-- 4 keys = 80 requests/day
-- 10 keys = 200 requests/day
+## 🔧 Troubleshooting
 
-**Each Stock Analysis Uses:**
-- 4 API calls (technical, sentiment, filings, synthesis)
+| Issue | Solution |
+|-------|----------|
+| "All API keys exhausted" | Wait 24h or add more keys |
+| "No API keys found" | Check `.env` file exists and format |
+| "parse_failed" errors | Temporary AI issue, retry later |
+| Keys not rotating | Test with `tests/check_api.py` |
 
-**Example:**
-- 4 keys = 80 requests/day
-- 80 ÷ 4 = 20 stocks/day
+## 🚀 Next Steps
 
----
+**Development:**
+- [ ] Add more API keys to `.env`
+- [ ] Replace hardcoded data with live APIs
+- [ ] Add more stocks to `Data/data.py`
 
-## Troubleshooting
+**Production:**
+- [ ] Integrate real-time data (Yahoo Finance, Alpha Vantage)
+- [ ] Add database for historical analysis
+- [ ] Create REST API endpoints
+- [ ] Implement caching layer
+- [ ] Upgrade to paid API tiers
 
-### "All API keys exhausted"
-- **Cause:** All keys hit daily quota
-- **Fix:** Wait for reset (24h) or add more keys
+## 🔒 Security
 
-### "No API keys found"
-- **Cause:** `.env` missing or misconfigured
-- **Fix:** Check `.env` exists and has proper format
-
-### "parse_failed" errors
-- **Cause:** Rate limit or invalid JSON from AI
-- **Fix:** Keys exhausted or temporary AI issue, retry later
-
-### Keys not rotating
-- **Cause:** All keys invalid or misconfigured
-- **Fix:** Test each key individually with `tests/check_api.py`
-
----
-
-## Next Steps
-
-**For Development:**
-1. Add 2-3 more API keys to `.env`
-2. Replace hardcoded data with live APIs
-3. Add more stocks to `Data/data.py`
-
-**For Production:**
-1. Integrate real-time data (Yahoo Finance, Alpha Vantage)
-2. Add database for historical analysis
-3. Create REST API endpoints
-4. Implement caching layer
-5. Upgrade to paid API tiers for higher quotas
-
----
-
-## Security
-
-✅ `.env` is gitignored  
-✅ API keys never logged  
-✅ Use `.env.example` as template  
-✅ Rotate keys if exposed  
-
----
-
-## Support
-
-- Check logs for detailed error messages
-- Test with `check_api.py` to validate keys
-- Monitor key rotation in console output
-- See test files in `tests/` for examples
+- ✅ `.env` is gitignored
+- ✅ API keys never logged
+- ✅ Use `.env.example` as template
+- ✅ Rotate keys if exposed
