@@ -1,0 +1,6 @@
+{
+  "technical": {"signal": "bullish", "confidence": 0.8, "reasoning": "..."},
+  "sentiment": {"signal": "positive", "confidence": 0.7, "reasoning": "..."},
+  "filings": {"outlook": "positive", "confidence": 0.75, "reasoning": "...", "source": "doc1.txt"},
+  "synthesis": {"recommendation": "buy", "confidence": 0.78, "explanation": "..."}
+}
