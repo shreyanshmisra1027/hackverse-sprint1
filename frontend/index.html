@@ -3,75 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HACKVERSE - Multi-Agent Financial Intelligence</title>
+    <title>HACKVERSE — Multi-Agent Financial Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0a0d12;
+            --bg-raise: #0c1016;
+            --panel: #10151c;
+            --border: #1e2731;
+            --border-strong: #2c3846;
+            --text: #e7ebf0;
+            --text-muted: #8a95a5;
+            --text-dim: #566073;
+            --accent: #c9a24b;
+            --accent-soft: rgba(201, 162, 75, 0.14);
+            --accent-line: rgba(201, 162, 75, 0.35);
+            --positive: #35b575;
+            --positive-bg: #122a1e;
+            --negative: #e5484d;
+            --negative-bg: #2c1417;
+            --neutral: #c9a24b;
+            --neutral-bg: #2a2210;
+            --font-display: 'Space Grotesk', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+            --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0e17; color: #e8e8e8; line-height: 1.6; }
-        header { background: linear-gradient(135deg, #1a2332 0%, #0d1117 100%); padding: 2rem; border-bottom: 1px solid #2a3444; }
-        header h1 { font-size: 1.8rem; color: #fff; letter-spacing: -0.02em; }
-        header .subtitle { color: #89a0b8; font-size: 0.9rem; margin-top: 0.3rem; }
-        .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 1.5rem; }
-        .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #f0f0f0; border-bottom: 1px solid #2a3444; padding-bottom: 0.5rem; }
-        select, button { padding: 0.6rem 1rem; border-radius: 6px; border: 1px solid #2a3444; background: #1a2332; color: #fff; font-size: 0.95rem; }
-        button { background: #2563eb; border-color: #2563eb; cursor: pointer; font-weight: 600; }
-        button:hover { background: #1d4ed8; }
-        .result-box { background: #0d1117; padding: 1rem; border-radius: 8px; border-left: 3px solid #2563eb; margin-top: 1rem; }
-        .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .badge-buy { background: #163a18; color: #7ee787; }
-        .badge-sell { background: #3a1616; color: #f87171; }
-        .badge-hold { background: #3a3a1f; color: #eab308; }
-        .user-card { background: linear-gradient(135deg, #1e293b, #0f172a); }
+
+        html { scrollbar-color: var(--border-strong) var(--bg); }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        a { color: inherit; }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ---------- Ticker strip ---------- */
+        .ticker {
+            background: var(--bg-raise);
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .ticker-inner {
+            display: flex;
+            gap: 2.5rem;
+            padding: 0.5rem 2rem;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+        .ticker-inner span { color: var(--text-muted); }
+        .ticker-inner .up { color: var(--positive); }
+        .ticker-inner .down { color: var(--negative); }
+
+        /* ---------- Header ---------- */
+        header {
+            background: linear-gradient(180deg, #0d121a 0%, var(--bg) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 2.25rem 2rem 1.75rem;
+        }
+        .header-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .brand { display: flex; align-items: center; gap: 0.75rem; }
+        .brand-mark {
+            width: 34px; height: 34px;
+            border: 1.5px solid var(--accent);
+            border-radius: 6px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .brand-mark::before, .brand-mark::after {
+            content: "";
+            position: absolute;
+            background: var(--accent);
+        }
+        .brand-mark::before { width: 2px; height: 14px; left: 10px; bottom: 7px; }
+        .brand-mark::after { width: 2px; height: 20px; right: 10px; bottom: 7px; }
+        header h1 {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.55rem;
+            letter-spacing: -0.01em;
+            color: #fff;
+        }
+        header .subtitle {
+            color: var(--text-dim);
+            font-size: 0.82rem;
+            margin-top: 0.2rem;
+            font-family: var(--font-mono);
+        }
+        .header-meta {
+            text-align: right;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+        .header-meta .live {
+            color: var(--positive);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .live-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--positive);
+            display: inline-block;
+        }
+
+        /* ---------- Layout ---------- */
+        .container { max-width: 1080px; margin: 0 auto; padding: 2.25rem 2rem 3rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 1.25rem; align-items: start; }
+        @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .card-head {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-head .dot {
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+        .card-head h2 {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--text);
+            letter-spacing: 0.01em;
+        }
+        .card-body { padding: 1.25rem; }
+
+        section.card { margin-top: 1.25rem; }
+
+        /* ---------- Form controls ---------- */
+        .field { margin-bottom: 1.1rem; }
+        .field:last-of-type { margin-bottom: 1.4rem; }
+        .field label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-family: var(--font-body);
+            font-weight: 500;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-raise);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: var(--font-body);
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%), linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+            background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+            transition: border-color 0.15s ease;
+        }
+        select:hover { border-color: var(--text-dim); }
+        select:focus { border-color: var(--accent); }
+
+        button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: #14100a;
+            font-size: 0.9rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        button:hover { background: #dab661; border-color: #dab661; }
+        button:active { background: #b6903f; }
+
+        /* ---------- Results / badges (classes written by the script) ---------- */
+        #results > p { color: var(--text-dim); font-size: 0.88rem; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.28rem 0.7rem;
+            border-radius: 3px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            letter-spacing: 0.03em;
+        }
+        .badge-buy { background: var(--positive-bg); color: var(--positive); border: 1px solid rgba(53,181,117,0.35); }
+        .badge-sell { background: var(--negative-bg); color: var(--negative); border: 1px solid rgba(229,72,77,0.35); }
+        .badge-hold { background: var(--neutral-bg); color: var(--neutral); border: 1px solid rgba(201,162,75,0.35); }
+
         .metrics { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
-        .metric { background: #1a2332; padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.8rem; color: #89a0b8; }
-        pre { background: #0d1117; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; color: #c9d1d9; }
-        .source { font-size: 0.8rem; color: #8892b0; margin-top: 0.5rem; }
+        .metric {
+            background: var(--bg-raise);
+            border: 1px solid var(--border);
+            padding: 0.32rem 0.65rem;
+            border-radius: 3px;
+            font-size: 0.76rem;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .result-box {
+            background: var(--bg-raise);
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--accent);
+            padding: 1rem 1.1rem;
+            border-radius: 3px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .result-box strong { font-family: var(--font-display); font-weight: 600; color: var(--text); }
+
+        pre {
+            background: var(--bg-raise);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.82rem;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .source {
+            font-size: 0.76rem;
+            color: var(--text-dim);
+            margin-top: 0.7rem;
+            font-family: var(--font-mono);
+        }
+
+        .user-card { background: linear-gradient(160deg, #141b26, var(--panel)); }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.78rem;
+            font-family: var(--font-mono);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+        }
     </style>
 </head>
 <body>
+    <div class="ticker">
+        <div class="ticker-inner">
+            <span>NVDA <span class="up">926.40 ▲ 2.14%</span></span>
+            <span>TSLA <span class="down">248.12 ▼ 1.38%</span></span>
+            <span>TATAMOTORS <span class="up">950.60 ▲ 4.50%</span></span>
+            <span>NIFTY 50 <span class="up">24,812 ▲ 0.62%</span></span>
+            <span>SENSEX <span class="up">81,340 ▲ 0.58%</span></span>
+        </div>
+    </div>
+
     <header>
-        <h1>💹 Multi-Agent Financial Intelligence</h1>
-        <div class="subtitle">PS-01 — HACKVERSE 2026 · VIT Chennai · IEEE RAS Student Chapter</div>
+        <div class="header-inner">
+            <div>
+                <div class="brand">
+                    <div class="brand-mark"></div>
+                    <h1>Multi-Agent Financial Intelligence</h1>
+                </div>
+                <div class="subtitle">PS-01 / HACKVERSE 2026 / VIT Chennai / IEEE RAS Student Chapter</div>
+            </div>
+            <div class="header-meta">
+                <div class="live"><span class="live-dot"></span>Agents online</div>
+                <div>3 signal dimensions · session logged</div>
+            </div>
+        </div>
     </header>
 
     <main class="container">
         <div class="grid">
             <!-- Controls -->
             <div class="card">
-                <h2>🔍 Analysis Input</h2>
-                <label>Stock:</label>
-                <select id="stock"><option>NVIDIA</option><option>TESLA</option><option>TATAMOTORS</option></select>
-                <br><br>
-                <label>User Profile:</label>
-                <select id="profile"><option>Priya (Medium)</option><option>Ramesh (Low)</option><option>Aakash (High)</option></select>
-                <br><br>
-                <label>Sentiment:</label>
-                <select id="sentiment"><option>Available</option><option>Unavailable (Degraded)</option></select>
-                <br><br>
-                <button onclick="runAnalysis()">▶ Run Multi-Agent Analysis</button>
+                <div class="card-head"><span class="dot"></span><h2>Analysis Input</h2></div>
+                <div class="card-body">
+                    <div class="field">
+                        <label for="stock">Stock</label>
+                        <select id="stock"><option>NVIDIA</option><option>TESLA</option><option>TATAMOTORS</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="profile">User profile</label>
+                        <select id="profile"><option>Priya (Medium)</option><option>Ramesh (Low)</option><option>Aakash (High)</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="sentiment">Sentiment feed</label>
+                        <select id="sentiment"><option>Available</option><option>Unavailable (Degraded)</option></select>
+                    </div>
+                    <button onclick="runAnalysis()">Run multi-agent analysis</button>
+                </div>
             </div>
 
             <!-- Results -->
             <div class="card">
-                <h2>📊 Agent Results</h2>
-                <div id="results">
-                    <p style="color:#8892b0">Click "Run Analysis" to see multi-agent output with source attribution, confidence scores, and personalized recommendations.</p>
+                <div class="card-head"><span class="dot"></span><h2>Agent Results</h2></div>
+                <div class="card-body">
+                    <div id="results">
+                        <p>Run an analysis to see multi-agent output with source attribution, confidence scores, and a personalized recommendation.</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="card" style="margin-top:1.5rem">
-            <h2>🎯 Synthesis Output (Raw + Personalized)</h2>
-            <div id="synthesis"></div>
-        </div>
+        <section class="card">
+            <div class="card-head"><span class="dot"></span><h2>Synthesis Output — Raw &amp; Personalized</h2></div>
+            <div class="card-body">
+                <div id="synthesis"></div>
+            </div>
+        </section>
 
-        <div class="card" style="margin-top:1.5rem">
-            <h2>📈 Performance Metrics</h2>
-            <div id="metrics"></div>
-        </div>
+        <section class="card">
+            <div class="card-head"><span class="dot"></span><h2>Performance Metrics</h2></div>
+            <div class="card-body">
+                <div id="metrics"></div>
+            </div>
+        </section>
     </main>
+
+    <footer>Multi-Agent Financial Intelligence · built for HACKVERSE 2026 · not investment advice</footer>
 
     <script>
         // Mock data for demo (since API may be rate-limited)
